@@ -1,5 +1,7 @@
 # blockchain_practice
 
+It is a manul fork of github project: https://github.com/Jeiwan/blockchain_go
+
 [building-blockchain-in-go Part 1](https://jeiwan.cc/posts/building-blockchain-in-go-part-1/)
 
 [building-blockchain-in-go Part 2](https://jeiwan.cc/posts/building-blockchain-in-go-part-2/)
