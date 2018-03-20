@@ -26,6 +26,9 @@ Hash: 1d91dd3a96c4f0aeda38a7f8806b66c113c0b75ba6f584a28378e8b0959d3cac
 Prev. hash: 1d91dd3a96c4f0aeda38a7f8806b66c113c0b75ba6f584a28378e8b0959d3cac
 Data: Send 2 more BTC to Ivan
 Hash: 6a9d98cc98f53f1bf02f3f26ac628e28f36d71d5e81eefb80409094dca8d387d
+
+或者
+➜  part_one git:(master) ✗ go test
 ```
 
 # Next
