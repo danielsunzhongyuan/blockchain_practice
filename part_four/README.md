@@ -53,3 +53,49 @@ type TXInput struct {
     ScriptSig   string
 }
 ```
+- Txid 存储的是交易的ID
+- Vout 存储的是交易里输出的索引
+- ScriptSig 存储的是将被用在输出 ScriptPubKey 的数据，这个数据正确，输出才可以被解锁
+
+每个交易，至少包括1个输入和1个输出
+
+# 鸡生蛋 蛋生鸡问题
+在比特币的概念里，是现有的Outputs，再有的Inputs
+当一个矿工开始挖币的时候，它会增加一条 coinbase的交易信息。
+Coinbase transaction是一种特殊类型的交易，它不要求有前一条的输出。
+它直接生成Output。（所以说，Output先于Input出现）
+这就是矿工挖币所获得的奖励。
+
+在区块链概念里，最初始的区块称之为"Genesis block"，也就是这一个block，产生了区块链里的第一个Output。
+
+# 在区块链里存储交易信息
+每个区块都至少包含一个交易，否则无法继续挖矿。这样以来，Block里的data就将替换为transactions
+```
+type Block struct {
+    Timestamp       int64
+    Transactions    []*Transaction
+    PrevBlockHash   []byte
+    Hash            []byte
+    Nonce           int
+}
+```
+
+
+# 操作命令
+```
+➜  part_four git:(master) ✗ go run *.go -h
+Usage:
+  getbalance -address ADDRESS - Get balance of ADDRESS
+  createblockchain -address ADDRESS - Create a blockchain and send genesis block reward to ADDRESS
+  printchain - Print all the blocks of the blockchain
+  send -from FROM -to TO -amount AMOUNT - Send AMOUNT of coins from FROM address to TO
+exit status 1
+
+
+go run *.go createblockchain -address Ivan
+go run *.go getbalance -address Ivan // Balance of 'Ivan': 10
+go run *.go send -from Ivan -to John -amount 6
+go run *.go getbalance -address Ivan // Balance of 'Ivan': 4
+go run *.go getbalance -address John // Balance of 'John': 6
+
+```
