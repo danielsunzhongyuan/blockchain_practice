@@ -308,7 +308,44 @@ func (b *Block) HashTransactions() []byte {
 
 ***这是比特币支付的最核心机制！！！***
 
+这个脚本分为两个部分，分别存储在两个不同的地方：
+1. 第一部分，<signature><pubKey>，存储在输入的 ScriptSig里
+2. 第二部分，OP_DUP OP_HASH160 <pubKeyhash> OP_EQUALVERIFY OP_CHECKSIG存储在输出的 ScriptPubKey里
+
+因此，输出里包含了解锁的逻辑，输入里则提供了可以解锁输出的数据。执行该脚本：
+1. Stack: empty;
+Script: <signature> <pubKey> OP_DUP OP_HASH160 <pubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
+2. Stack: <signature>;
+Script: <pubKey> OP_DUP OP_HASH160 <pubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
+3. Stack: <signature> <pubKey>;
+Script: OP_DUP OP_HASH160 <pubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
+4. Stack: <signature> <pubKey> <pubKey>;
+Script: OP_HASH160 <pubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
+5. Stack: <signature> <pubKey> <pubKeyHash>;
+Script: <pubKeyHash> OP_EQUALVERIFY OP_CHECKSIG
+6. Stack: <signature> <pubKey> <pubKeyHash> <pubKeyHash>;
+Script: OP_EQUALVERIFY OP_CHECKSIG
+7. Stack: <signature> <pubKey>;
+Script: OP_CHECKSIG
+8. Stack: true or false. Script: empty.
+
+这里检查两个地方，一个是 OP_EQUALVERIFY <pubKeyHash>；一个是 OP_CHECKSIG <signature> <pubKey>
+
+# 总结
+目前为止，我们实现了区块链，地址，挖矿，交易。
+但是还有一件重要的事情 - 共识（consensus）。正是"共识"，使得比特币成为了一个全球化的系统。
+
+下一章节，我们将会实现区块链中的"去中心化"概念！
 
 
-
-
+# 特别注意
+utxo_set.go 文件里的多个方法都进行了数据库相关的操作：
+```
+db := u.Blockchain.db
+db.Update()
+...
+```
+但是这里不能写 `defer db.Close()`，否则的话，会出现以下错误：
+```
+panic: database not open
+```
