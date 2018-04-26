@@ -164,6 +164,7 @@ func (bc *Blockchain) FindUTXO() map[string]TXOutputs {
 
 		for _, tx := range block.Transactions {
 			txID := hex.EncodeToString(tx.ID)
+
 		Outputs:
 			for outIdx, out := range tx.Vout {
 				// Was the output spent?
@@ -179,6 +180,7 @@ func (bc *Blockchain) FindUTXO() map[string]TXOutputs {
 				outs.Outputs = append(outs.Outputs, out)
 				UTXO[txID] = outs
 			}
+
 			if tx.IsCoinbase() == false {
 				for _, in := range tx.Vin {
 					inTxID := hex.EncodeToString(in.Txid)
@@ -186,6 +188,7 @@ func (bc *Blockchain) FindUTXO() map[string]TXOutputs {
 				}
 			}
 		}
+
 		if len(block.PrevBlockHash) == 0 {
 			break
 		}
@@ -201,11 +204,74 @@ func (bc *Blockchain) Iterator() *BlockchainIterator {
 	return bci
 }
 
+// GetBestHeight returns the height of the latest block
+func (bc *Blockchain) GetBestHeight() int {
+	var lastBlock Block
+
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blocksBucket))
+		lastHash := b.Get([]byte("l"))
+		blockData := b.Get(lastHash)
+		lastBlock = *DeserializeBlock(blockData)
+
+		return nil
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return lastBlock.Height
+}
+
+// GetBlock finds a block by its hash and returns it
+func (bc *Blockchain) GetBlock(blockHash []byte) (Block, error) {
+	var block Block
+
+	err := bc.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blocksBucket))
+
+		blockData := b.Get(blockHash)
+
+		if blockData == nil {
+			return errors.New("Block is not found.")
+		}
+
+		block = *DeserializeBlock(blockData)
+
+		return nil
+	})
+	if err != nil {
+		return block, err
+	}
+
+	return block, nil
+}
+
+// GetBlockHashes returns a list of hashes of all the blocks in the chain
+func (bc *Blockchain) GetBlockHashes() [][]byte {
+	var blocks [][]byte
+	bci := bc.Iterator()
+
+	for {
+		block := bci.Next()
+
+		blocks = append(blocks, block.Hash)
+
+		if len(block.PrevBlockHash) == 0 {
+			break
+		}
+	}
+
+	return blocks
+}
+
 // MineBlock mines a new block with the provided transactions
 func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 	var lastHash []byte
+	var lastHeight int
 
 	for _, tx := range transactions {
+		// TODO: ignore transaction if it's not valid
 		if bc.VerifyTransaction(tx) != true {
 			log.Panic("ERROR: Invalid transaction")
 		}
@@ -215,13 +281,18 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 		b := tx.Bucket([]byte(blocksBucket))
 		lastHash = b.Get([]byte("l"))
 
+		blockData := b.Get(lastHash)
+		block := DeserializeBlock(blockData)
+
+		lastHeight = block.Height
+
 		return nil
 	})
 	if err != nil {
 		log.Panic(err)
 	}
 
-	newBlock := NewBlock(transactions, lastHash)
+	newBlock := NewBlock(transactions, lastHash, lastHeight+1)
 
 	err = bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
@@ -242,6 +313,7 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 	if err != nil {
 		log.Panic(err)
 	}
+
 	return newBlock
 }
 

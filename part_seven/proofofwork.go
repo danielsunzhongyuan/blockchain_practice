@@ -14,6 +14,7 @@ var (
 
 const targetBits = 16
 
+// ProofOfWork represents a proof-of-work
 type ProofOfWork struct {
 	block  *Block
 	target *big.Int
@@ -28,6 +29,7 @@ func NewProofOfWork(b *Block) *ProofOfWork {
 
 	return pow
 }
+
 func (pow *ProofOfWork) prepareData(nonce int) []byte {
 	data := bytes.Join(
 		[][]byte{
