@@ -381,23 +381,45 @@ func handleTx(request []byte, bc *Blockchain) {
 1. 打开一个终端，set NODE_ID = 3000 （export NODE_ID=3000）。
 新建一个钱包，新建一个区块链
 这个是中央节点。
+- 复制blockchain，这里为 4.1 做准备 `cp blockchain_3000.db blockchain_genesis.db`
 2. 打开一个新终端，set NODE_ID = 3001
 然后新建多个钱包地址，例如 WALLET_1，WALLET_2，WALLET_3，
 这个是钱包节点
+
 3. 在中央节点上，用中央节点的地址，给WALLET_1，WALLET_2各发送10个币
 这时候要带上 -mine 参数，意思是发送的时候立马挖一个新区块。
 这是因为目前还没有 mine 节点。
 然后启动这个中央节点 - `startnode`
 这个服务会一直开着。
+
 4. 再回到wallet node上，`startnode`，然后它会从中央节点那里下载所有区块
 这时候可以通过查看余额的方式验证确实把数据都拿下来了。
+* 在`startnode`之前，先create一个blockchain，但是不是用`createblockchain`的命令，而是复制 `cp blockchain_genesis.db blockchain_3001.db`
+* 这时候可以检查 WALLET_1，WALLET_2的余额，应该都是 10。
+同时，可以检查中央节点的钱包的余额，因为已经从中央节点把所有数据都下载下来了，应该也是10。
+
 5. 再开一个终端，set NODE_ID = 3002，这是一个矿机节点
-先生成一个钱包地址，然后 `startnode -miner MINER_WALLET`
+先生成一个钱包地址，复制blockchain `cp blockchain_genesis.db blockchain_3002.db`
+然后 `startnode -miner MINER_WALLET`
+
 6. 回到3001上，发送一些币给某些人
+```
+go run *.go send -from WALLET_1 -to WALLET_3 -amount 1
+go run *.go send -from WALLET_2 -to MINER_WALLET -amount 1
+```
+
 7. 回到3002上，可以看到它挖了一个新区块
+
 8. 回到3000上，可以看到，中央节点也收到了新区块
+
 9. 回到wallet node，3001，`startnode`
 它会下载所有新区块，停止服务，可以查看各个的余额。
+```
+go run *.go send -getbalance WALLET_1  // 9
+go run *.go send -getbalance WALLET_2  // 9
+go run *.go send -getbalance WALLET_3  // 1
+go run *.go send -getbalance MINER_WALLET  // 11
+```
 
 OVER！
 
